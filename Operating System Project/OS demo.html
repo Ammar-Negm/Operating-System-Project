@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CPU Scheduling Simulator</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:Arial,sans-serif;
+  background:#1a1a1a;
+  color:#d4d4d4;
+  padding:20px;
+}
+
+.title{
+  text-align:center;
+  font-size:24px;
+  font-weight:bold;
+  color:#e8e8e8;
+  margin-bottom:4px;
+}
+
+.subtitle{
+  text-align:center;
+  font-size:13px;
+  color:#888;
+  margin-bottom:24px;
+}
+
+.wrap{
+  max-width:1000px;
+  margin:auto;
+  background:#242424;
+  padding:24px;
+  border-radius:10px;
+  border:1px solid #333;
+}
+
+.row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin-bottom:14px;
+}
+
+label{
+  font-size:13px;
+  color:#aaa;
+  min-width:100px;
+}
+
+input{
+  padding:7px 10px;
+  border-radius:6px;
+  border:1px solid #444;
+  background:#1a1a1a;
+  color:#e8e8e8;
+  font-size:13px;
+  width:80px;
+}
+
+input:focus{
+  outline:none;
+  border-color:#777;
+}
+
+input.err{border-color:#cc4444}
+
+.err-msg{
+  font-size:11px;
+  color:#cc4444;
+}
+
+.proc-table{
+  width:100%;
+  border-collapse:collapse;
+  margin-bottom:14px;
+}
+
+.proc-table th{
+  font-size:11px;
+  color:#888;
+  font-weight:normal;
+  text-align:center;
+  padding:6px 8px;
+  border-bottom:1px solid #333;
+}
+
+.proc-table td{
+  padding:5px 8px;
+  border-bottom:1px solid #2e2e2e;
+  text-align:center;
+}
+
+.proc-table td input{width:70px}
+
+.dot{
+  width:10px;height:10px;
+  border-radius:50%;
+  display:inline-block;
+}
+
+.del-btn{
+  background:none;
+  border:1px solid #444;
+  border-radius:4px;
+  color:#888;
+  cursor:pointer;
+  padding:3px 8px;
+  font-size:13px;
+}
+.del-btn:hover{border-color:#cc4444;color:#cc4444;transform:none}
+
+.btn-row{
+  display:flex;
+  gap:8px;
+  margin-bottom:24px;
+  flex-wrap:wrap;
+}
+
+button{
+  padding:8px 18px;
+  border-radius:6px;
+  border:1px solid #444;
+  background:#2e2e2e;
+  color:#d4d4d4;
+  cursor:pointer;
+  font-size:13px;
+  transition:background .15s;
+}
+
+button:hover{background:#383838;transform:none}
+
+.run{
+  background:#4a4a4a;
+  color:#e8e8e8;
+  border-color:#666;
+  font-weight:bold;
+}
+
+.run:hover{background:#555}
+
+.side{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+}
+
+.col-title{
+  font-size:13px;
+  font-weight:bold;
+  color:#aaa;
+  margin-bottom:8px;
+  padding-bottom:6px;
+  border-bottom:1px solid #333;
+}
+
+.gantt-outer{
+  overflow-x:auto;
+  background:#1a1a1a;
+  border:1px solid #333;
+  border-radius:6px;
+  padding:10px;
+  margin-bottom:10px;
+}
+
+.gantt-inner{
+  min-width:max-content;
+  padding-bottom:18px;
+  position:relative;
+}
+
+.gantt-bars{
+  display:flex;
+  gap:2px;
+  height:34px;
+  margin-bottom:4px;
+}
+
+.gbar{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:10px;
+  font-weight:bold;
+  border-radius:3px;
+  min-width:6px;
+  color:#fff;
+  cursor:default;
+}
+
+.gticks{
+  position:relative;
+  height:16px;
+}
+
+.gtick{
+  position:absolute;
+  font-size:9px;
+  color:#666;
+  transform:translateX(-50%);
+}
+
+.metrics{
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+}
+
+.metrics th{
+  font-size:10px;
+  color:#888;
+  font-weight:normal;
+  padding:5px 6px;
+  border-bottom:1px solid #333;
+  text-align:left;
+}
+
+.metrics td{
+  padding:5px 6px;
+  border-bottom:1px solid #2e2e2e;
+  color:#ccc;
+}
+
+.metrics .avg-row td{
+  background:#2e2e2e;
+  font-weight:bold;
+  color:#bbb;
+  border-top:1px solid #444;
+}
+
+.cmp{
+  margin-top:20px;
+  padding:16px;
+  background:#1a1a1a;
+  border:1px solid #333;
+  border-radius:8px;
+}
+
+.cmp-title{
+  font-size:12px;
+  color:#888;
+  margin-bottom:12px;
+  font-weight:bold;
+}
+
+.cmp-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.cmp-label{
+  font-size:12px;
+  color:#888;
+  width:80px;
+  flex-shrink:0;
+}
+
+.bar-track{
+  flex:1;
+  height:6px;
+  background:#2e2e2e;
+  border-radius:3px;
+  overflow:hidden;
+  border:1px solid #333;
+}
+
+.bar-fill{height:100%;border-radius:3px;transition:width .5s}
+
+.bar-val{
+  font-size:11px;
+  color:#ccc;
+  min-width:30px;
+  text-align:right;
+}
+
+.winner{
+  font-size:10px;
+  padding:2px 7px;
+  border-radius:3px;
+  color:#aaa;
+  background:#2e2e2e;
+  border:1px solid #444;
+}
+
+.empty{
+  text-align:center;
+  color:#555;
+  padding:20px;
+  font-size:12px;
+}
+
+@media(max-width:650px){
+  .side{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<h1 class="title">CPU Scheduling Simulator</h1>
+<p class="subtitle">Round Robin vs Shortest Job First</p>
+
+<div class="wrap">
+
+  <div class="row">
+    <label>Time Quantum</label>
+    <input type="number" id="q" value="3" min="1">
+    <span id="qerr" class="err-msg"></span>
+  </div>
+
+  <table class="proc-table">
+    <thead>
+      <tr><th></th><th>Name</th><th>Arrival</th><th>Burst</th><th></th></tr>
+    </thead>
+    <tbody id="ptbody"></tbody>
+  </table>
+
+  <div class="btn-row">
+    <button class="run" onclick="run()">Run</button>
+    <button onclick="addProc()">+ Process</button>
+    <button onclick="resetAll()">Reset</button>
+  </div>
+
+  <div class="side">
+    <div>
+      <div class="col-title">Round Robin (q = <span id="qlabel">3</span>)</div>
+      <div class="gantt-outer"><div id="rr-gantt"><div class="empty">Run to see chart</div></div></div>
+      <div id="rr-tbl"><div class="empty">—</div></div>
+    </div>
+    <div>
+      <div class="col-title">SJF — Non-Preemptive</div>
+      <div class="gantt-outer"><div id="sjf-gantt"><div class="empty">Run to see chart</div></div></div>
+      <div id="sjf-tbl"><div class="empty">—</div></div>
+    </div>
+  </div>
+
+  <div id="cmp-panel" class="cmp" style="display:none"></div>
+
+</div>
+
+<script>
+const COLORS = ['#5a7a9e','#4e8c6e','#8c6a3f','#6e5a9e','#8c4e6e','#3f7a8c','#7a8c3f','#6a6a6a'];
+
+let procs = [
+  {id:0,name:'P1',at:0,bt:6},
+  {id:1,name:'P2',at:1,bt:3},
+  {id:2,name:'P3',at:2,bt:8},
+  {id:3,name:'P4',at:3,bt:4},
+  {id:4,name:'P5',at:4,bt:2},
+];
+let nid = 5;
+
+function colorOf(i){ return COLORS[i % COLORS.length]; }
+
+function colMap(){
+  const m = {};
+  procs.forEach((p,i) => m[p.name] = colorOf(i));
+  return m;
+}
+
+// ── Render input table ────────────────────────────────────────
+function renderTable(){
+  const tb = document.getElementById('ptbody');
+  tb.innerHTML = '';
+  procs.forEach((p,i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="dot" style="background:${colorOf(i)}"></span></td>
+      <td><input value="${p.name}" onchange="procs[${i}].name=this.value"></td>
+      <td><input type="number" value="${p.at}" min="0" onchange="procs[${i}].at=+this.value"></td>
+      <td><input type="number" value="${p.bt}" min="1" onchange="procs[${i}].bt=+this.value"></td>
+      <td><button class="del-btn" onclick="procs.splice(${i},1);renderTable()">×</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function addProc(){
+  if(procs.length >= 8) return;
+  procs.push({id:nid++, name:'P'+(procs.length+1), at:0, bt:4});
+  renderTable();
+}
+
+function resetAll(){
+  procs = [
+    {id:0,name:'P1',at:0,bt:6},
+    {id:1,name:'P2',at:1,bt:3},
+    {id:2,name:'P3',at:2,bt:8},
+    {id:3,name:'P4',at:3,bt:4},
+    {id:4,name:'P5',at:4,bt:2},
+  ];
+  nid = 5;
+  document.getElementById('q').value = 3;
+  document.getElementById('qerr').textContent = '';
+  document.getElementById('q').classList.remove('err');
+  renderTable();
+  ['rr-gantt','sjf-gantt'].forEach(id =>
+    document.getElementById(id).innerHTML = '<div class="empty">Run to see chart</div>'
+  );
+  ['rr-tbl','sjf-tbl'].forEach(id =>
+    document.getElementById(id).innerHTML = '<div class="empty">—</div>'
+  );
+  document.getElementById('cmp-panel').style.display = 'none';
+  document.getElementById('qlabel').textContent = 3;
+}
+
+// ── Round Robin ───────────────────────────────────────────────
+function simRR(ps, q){
+  const jobs = ps.map(p => ({...p, rem:p.bt, ct:0, rt:-1}))
+                 .sort((a,b) => a.at - b.at);
+  let t=0, gantt=[], queue=[], idx=0, done=0;
+
+  const enq = time => {
+    while(idx < jobs.length && jobs[idx].at <= time)
+      queue.push(jobs[idx++]);
+  };
+
+  enq(0);
+  if(!queue.length && jobs.length){ t = jobs[0].at; enq(t); }
+
+  while(done < jobs.length){
+    if(!queue.length){
+      // CPU idle: jump to next arriving process
+      const next = jobs.find(j => j.rem > 0 && j.at > t);
+      if(!next) break;
+      t = next.at;
+      enq(t);
+    }
+    const cur = queue.shift();
+    // Record first response time
+    if(cur.rt === -1) cur.rt = t - cur.at;
+
+    const run = Math.min(q, cur.rem);
+    gantt.push({name:cur.name, s:t, e:t+run});
+    t += run;
+    cur.rem -= run;
+    enq(t);
+
+    if(cur.rem > 0){
+      queue.push(cur);       // re-queue: not finished
+    } else {
+      cur.ct = t;            // completed
+      done++;
+    }
+  }
+  return {gantt, jobs};
+}
+
+// ── SJF Non-Preemptive ────────────────────────────────────────
+function simSJF(ps){
+  const jobs = ps.map(p => ({...p, ct:0, rt:-1, done:false}));
+  let t=0, gantt=[], done=0;
+
+  while(done < jobs.length){
+    const avail = jobs.filter(j => j.at <= t && !j.done);
+
+    if(!avail.length){
+      // CPU idle: jump to earliest arriving remaining process
+      const next = jobs.filter(j => !j.done).sort((a,b) => a.at - b.at)[0];
+      if(!next) break;
+      t = next.at;
+      continue;
+    }
+
+    // Pick shortest burst; tiebreak by earliest arrival
+    avail.sort((a,b) => a.bt === b.bt ? a.at - b.at : a.bt - b.bt);
+    const cur = avail[0];
+
+    cur.rt = t - cur.at;
+    gantt.push({name:cur.name, s:t, e:t + cur.bt});
+    t += cur.bt;
+    cur.ct = t;
+    cur.done = true;
+    done++;
+  }
+  return {gantt, jobs};
+}
+
+// ── Draw Gantt chart with time axis ──────────────────────────
+function drawGantt(containerId, gantt, cm){
+  const el = document.getElementById(containerId);
+  if(!gantt.length){ el.innerHTML = '<div class="empty">No data</div>'; return; }
+
+  const total = gantt[gantt.length-1].e;
+  // Scale unit width so chart fits reasonably
+  const U = Math.max(14, Math.min(36, 460 / total));
+
+  // Collect all time tick points
+  const ticks = [...new Set(gantt.flatMap(g => [g.s, g.e]))].sort((a,b) => a-b);
+
+  let bars = '<div class="gantt-bars">';
+  gantt.forEach(g => {
+    const w = (g.e - g.s) * U;
+    const col = cm[g.name] || '#555';
+    bars += `<div class="gbar"
+      style="width:${w}px;background:${col}"
+      title="${g.name}: ${g.s} → ${g.e} (${g.e-g.s} units)"
+    >${w > 16 ? g.name : ''}</div>`;
+  });
+  bars += '</div>';
+
+  let tickHtml = `<div class="gticks" style="width:${total*U}px">`;
+  ticks.forEach(t => {
+    tickHtml += `<div class="gtick" style="left:${t*U}px">${t}</div>`;
+  });
+  tickHtml += '</div>';
+
+  el.innerHTML = `<div class="gantt-inner">${bars}${tickHtml}</div>`;
+}
+
+// ── Draw metrics table (WT, TAT, RT, CT + averages) ──────────
+function drawMetrics(containerId, jobs, procOrder){
+  const sorted = [...jobs].sort((a,b) =>
+    procOrder.indexOf(a.name) - procOrder.indexOf(b.name)
+  );
+  const n = sorted.length;
+  let sumWT=0, sumTAT=0, sumRT=0;
+
+  let rows = sorted.map(j => {
+    const tat = j.ct - j.at;
+    const wt  = tat  - j.bt;
+    const rt  = j.rt;
+    sumWT += wt; sumTAT += tat; sumRT += rt;
+    return `<tr>
+      <td>${j.name}</td>
+      <td>${j.at}</td>
+      <td>${j.bt}</td>
+      <td>${j.ct}</td>
+      <td>${tat}</td>
+      <td>${wt}</td>
+      <td>${rt}</td>
+    </tr>`;
+  }).join('');
+
+  const avgWT  = (sumWT/n).toFixed(2);
+  const avgTAT = (sumTAT/n).toFixed(2);
+  const avgRT  = (sumRT/n).toFixed(2);
+
+  document.getElementById(containerId).innerHTML = `
+    <table class="metrics">
+      <thead>
+        <tr><th>P</th><th>AT</th><th>BT</th><th>CT</th><th>TAT</th><th>WT</th><th>RT</th></tr>
+      </thead>
+      <tbody>
+        ${rows}
+        <tr class="avg-row">
+          <td colspan="4">Average</td>
+          <td>${avgTAT}</td>
+          <td>${avgWT}</td>
+          <td>${avgRT}</td>
+        </tr>
+      </tbody>
+    </table>`;
+
+  return { avgWT:+avgWT, avgTAT:+avgTAT, avgRT:+avgRT };
+}
+
+// ── Main run function with validation ────────────────────────
+function run(){
+  const qInput = document.getElementById('q');
+  const qErr   = document.getElementById('qerr');
+  const q      = parseInt(qInput.value);
+
+  // Validate quantum
+  if(isNaN(q) || q < 1){
+    qErr.textContent = 'Quantum must be a positive integer';
+    qInput.classList.add('err');
+    return;
+  }
+  qErr.textContent = '';
+  qInput.classList.remove('err');
+
+  // Validate processes
+  if(procs.length < 1){
+    alert('Add at least one process.');
+    return;
+  }
+  for(let i=0; i<procs.length; i++){
+    if(procs[i].at < 0){ alert(`${procs[i].name}: Arrival Time must be >= 0`); return; }
+    if(procs[i].bt < 1){ alert(`${procs[i].name}: Burst Time must be >= 1`);   return; }
+  }
+
+  document.getElementById('qlabel').textContent = q;
+
+  const cm        = colMap();
+  const procOrder = procs.map(p => p.name);
+
+  const rr  = simRR(procs, q);
+  const sjf = simSJF(procs);
+
+  drawGantt('rr-gantt',  rr.gantt,  cm);
+  drawGantt('sjf-gantt', sjf.gantt, cm);
+
+  const rrA  = drawMetrics('rr-tbl',  rr.jobs,  procOrder);
+  const sjfA = drawMetrics('sjf-tbl', sjf.jobs, procOrder);
+
+  drawCmp(rrA, sjfA);
+}
+
+// ── Init ─────────────────────────────────────────────────────
+renderTable();
+</script>
+</body>
+</html>
