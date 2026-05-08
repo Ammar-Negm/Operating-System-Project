@@ -42,6 +42,24 @@ function addProc(){
   renderTable();
 }
 
+function applyTheme(theme){
+  const isDark = theme === 'dark';
+  const btn = document.getElementById('theme-toggle');
+  document.body.classList.toggle('dark-mode', isDark);
+  btn.textContent = isDark ? 'Light mode' : 'Dark mode';
+  btn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+}
+
+function toggleTheme(){
+  const nextTheme = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
+  applyTheme(nextTheme);
+}
+
+function initTheme(){
+  applyTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+}
+
 function resetAll(){
   procs = [
     {id:0,name:'P1',at:0,bt:6},
@@ -259,4 +277,5 @@ function run(){
 }
 
 // Init
+initTheme();
 renderTable();
