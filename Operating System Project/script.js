@@ -125,9 +125,9 @@ function simRR(ps, q){
   return {gantt, jobs};
 }
 
-// SJF Non-Preemptive
+// SJF Preemptive (SRTF - Shortest Remaining Time First)
 function simSJF(ps){
-  const jobs = ps.map(p => ({...p, ct:0, rt:-1, done:false}));
+  const jobs = ps.map(p => ({...p, rem:p.bt, ct:0, rt:-1, done:false}));
   let t=0, gantt=[], done=0;
 
   while(done < jobs.length){
@@ -141,16 +141,35 @@ function simSJF(ps){
       continue;
     }
 
-    // Pick shortest burst; tiebreak by earliest arrival
-    avail.sort((a,b) => a.bt === b.bt ? a.at - b.at : a.bt - b.bt);
+    // Pick shortest remaining time; tiebreak by earliest arrival
+    avail.sort((a,b) => a.rem === b.rem ? a.at - b.at : a.rem - b.rem);
     const cur = avail[0];
 
-    cur.rt = t - cur.at;
-    gantt.push({name:cur.name, s:t, e:t + cur.bt});
-    t += cur.bt;
-    cur.ct = t;
-    cur.done = true;
-    done++;
+    if(cur.rt === -1) cur.rt = t - cur.at;
+
+    // Find the next event: next arrival or current process completes
+    const nextArrival = jobs
+      .filter(j => j.at > t && !j.done)
+      .sort((a,b) => a.at - b.at)[0];
+
+    const runUntil = nextArrival ? Math.min(t + cur.rem, nextArrival.at) : t + cur.rem;
+    const runTime  = runUntil - t;
+
+    // Merge with last gantt bar if same process
+    if(gantt.length && gantt[gantt.length-1].name === cur.name){
+      gantt[gantt.length-1].e = runUntil;
+    } else {
+      gantt.push({name:cur.name, s:t, e:runUntil});
+    }
+
+    cur.rem -= runTime;
+    t = runUntil;
+
+    if(cur.rem === 0){
+      cur.ct   = t;
+      cur.done = true;
+      done++;
+    }
   }
   return {gantt, jobs};
 }

@@ -5,7 +5,7 @@ ________________________________________________________________________________
 Project Overview
 
 This project implements and compares two CPU scheduling algorithms:
-Round Robin (RR) and Shortest Job First (SJF) Non-Preemptive.
+Round Robin (RR) and Shortest Job First (SJF) Preemptive (SRTF).
 The simulator runs entirely in the browser — no installation, no backend,
 no dependencies. The user enters a set of processes, sets a time quantum,
 and the simulator runs both algorithms on the same input and displays
@@ -32,7 +32,7 @@ Add and remove processes dynamically (up to 8)
 Configurable time quantum for Round Robin
 Input validation with clear error messages
 Round Robin scheduling with correct queue rotation and arrival handling
-SJF Non-Preemptive scheduling with shortest-burst selection and arrival tiebreaking
+SJF Preemptive (SRTF) scheduling with shortest-burst selection and arrival tiebreaking
 Gantt Chart with time axis for both algorithms
 Metrics table per algorithm showing: AT, BT, CT, TAT, WT, RT
 Average WT, TAT, and RT for each algorithm
@@ -59,11 +59,12 @@ If not finished, it goes to the back of the ready queue
 Processes that arrive while another is running are enqueued in arrival order
 CPU idle gap handled: jumps to next arriving process if queue is empty
 
-SJF — Non-Preemptive
+SJF — Preemptive (SRTF)
 
-Non-preemptive: once a process starts, it runs to completion
-At each decision point, selects the process with the smallest burst time
-Tiebreak: if two processes have equal burst time, earliest arrival wins
+Preemptive: if a new process arrives with a shorter remaining burst time
+than the currently running process, the CPU is preempted immediately
+At each decision point, selects the process with the smallest remaining burst time
+Tiebreak: if two processes have equal remaining time, earliest arrival wins
 CPU idle gap handled: jumps to next arriving process if none are available
 
 _______________________________________________________________________________________________
