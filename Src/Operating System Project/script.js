@@ -173,8 +173,6 @@ function simSJF(ps){
   }
   return {gantt, jobs};
 }
-
-// Draw Gantt chart with time axis
 function drawGantt(containerId, gantt, cm){
   const el = document.getElementById(containerId);
   if(!gantt.length){ el.innerHTML = '<div class="empty">No data</div>'; return; }
@@ -294,7 +292,58 @@ function run(){
 
   drawCmp(rrA, sjfA);
 }
+function drawCmp(rrA, sjfA){
+  const panel = document.getElementById('cmp-panel');
+  const metrics = [
+    { label:'Avg WT',  rr: rrA.avgWT,  sjf: sjfA.avgWT  },
+    { label:'Avg TAT', rr: rrA.avgTAT, sjf: sjfA.avgTAT },
+    { label:'Avg RT',  rr: rrA.avgRT,  sjf: sjfA.avgRT  },
+  ];
 
+  const max = (m) => Math.max(m.rr, m.sjf, 1);
+
+  let rows = metrics.map(m => {
+    const rrW  = ((m.rr  / max(m)) * 100).toFixed(1);
+    const sjfW = ((m.sjf / max(m)) * 100).toFixed(1);
+    const rrWinner  = m.rr  <= m.sjf;
+    const sjfWinner = m.sjf <= m.rr;
+    return `
+      <div class="cmp-row">
+        <div class="cmp-label">${m.label}</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <span style="font-size:11px;color:var(--muted);width:28px">RR</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${rrW}%;background:#5a7a9e"></div></div>
+            <span class="bar-val">${m.rr}</span>
+            ${rrWinner ? '<span class="winner">✓ Better</span>' : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:11px;color:var(--muted);width:28px">SJF</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${sjfW}%;background:#4e8c6e"></div></div>
+            <span class="bar-val">${m.sjf}</span>
+            ${sjfWinner ? '<span class="winner">✓ Better</span>' : ''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Overall winner
+  const rrScore  = [rrA.avgWT <= sjfA.avgWT, rrA.avgTAT <= sjfA.avgTAT, rrA.avgRT <= sjfA.avgRT].filter(Boolean).length;
+  const sjfScore = 3 - rrScore;
+  const verdict  = rrScore > sjfScore
+    ? 'Round Robin performed better overall on this workload.'
+    : sjfScore > rrScore
+    ? 'SJF (Preemptive/SRTF) performed better overall on this workload.'
+    : 'Both algorithms performed equally on this workload.';
+
+  panel.innerHTML = `
+    <div class="cmp-title">Comparison Summary</div>
+    ${rows}
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--accent-strong);font-weight:700">
+      ${verdict}
+    </div>`;
+  panel.style.display = 'block';
+}
 // Init
 initTheme();
 renderTable();
